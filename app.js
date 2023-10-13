@@ -2,40 +2,30 @@ require ('dotenv').config();
 
 const express = require('express');
 const expressLayouts = require('express-ejs-layouts');
-const client = require('./connect.js');
-
-const pg = require('pg');
-
+const connectDB = require('./server/config/db');
 const session = require('express-session');
 const passport = require('passport');
-
-const pgSession = require('connect-pg-simple')(session);
+const MongoStore = require('connect-mongo');
 
 
 const app = express();
 const port = 5000 || process.env.PORT;
 
-const pgPool = new pg.Pool(client);
-
 app.use(session({
-    secret: 'keyboard cat',
+    secret: 'my_deepest_secret',
     resave: false,
     saveUninitialized: true,
-    store: new pgSession({
-        pool: pgPool,
-        tableName: 'session',
-    }
-    )}
-    ));
+    store: MongoStore.create({ mongoUrl: process.env.MONGODB_URI })
+}))
 
 app.use(passport.initialize());
-// app.use (passport.session());
+app.use (passport.session());
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 // Connect to database
-// client();
+connectDB();
 
 // static files
 app.use(express.static('public'));
@@ -49,7 +39,6 @@ app.set('view engine', 'ejs');
 app.use('/', require('./server/routes/auths'));
 app.use('/', require('./server/routes/index'));
 app.use('/', require('./server/routes/dashboard.js'));
-
 
 
 // Handle 404

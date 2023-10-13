@@ -1,54 +1,74 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const passport = require('passport');
-const GoogleStrategy = require('passport-google-oauth20').Strategy;
-const User = require('../models/User');
+const passport = require("passport");
+const GoogleStrategy = require("passport-google-oauth20").Strategy;
+const User = require("../models/User");
+
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: process.env.GOOGLE_CALLBACK_URL,
+    },
+    async function (accessToken, refreshToken, profile, done) {
+      const newUser = {
+        googleId: profile.id,
+        displayName: profile.displayName,
+        firstName: profile.name.givenName,
+        lastName: profile.name.familyName,
+        profileImage: profile.photos[0].value,
+      }
+
+      try {
+        let user = await User.findOne({ googleId: profile.id });
+
+        if (user) {
+          done(null, user);
+        } else {
+          user = await User.create(newUser);
+          done(null, user);
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    }
+  )
+);
+
+// Google Login Route
+router.get(
+  "/auth/google",
+  passport.authenticate("google", { scope: ["email", "profile"] })
+);
 
 
-passport.use(new GoogleStrategy({
-    clientID: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: process.env.GOOGLE_CALLBACK_URL
-  },
-  function(accessToken, refreshToken, profile, cb) {
+router.get(
+  "/google/callback",
+  passport.authenticate("google", {
+    failureRedirect: "/login-failure",
+    successRedirect: "/dashboard",
+  })
+);
 
-    console.log(profile);
-    User.findOrCreate({ googleId: profile.id }, function (err, user) {
-      return cb(err, user);
-    });
-  }
-));
+// Route if something goes wrong
+router.get("/login-failure", (req, res) => {
+  res.send("Something went wrong with your login");
+});
 
 // Presist user data after authentication
-passport.serializeUser(function(user, done) {
-    done(null, user.id);
-  }
-);
+passport.serializeUser(function (user, done) {
+  done(null, user.id);
+});
 
 // Retrieve user data from session
 passport.deserializeUser(function(id, done) {
-    User.findById(id, function(err, user) {
-      done(err, user);
-    });
-  }
-);
-
-
-router.get('/auth/google',
-  passport.authenticate('google', { scope: ['email','profile'] }));
-
-router.get('/google/callback', 
-  passport.authenticate('google', { 
-    failureRedirect: '/login-failure',
-    successRedirect: '/dashboard', })
-  
-  );
-
-//   Route if something goes wrong
-router.get('/login-failure', (req, res) => {
-    res.send('Something went wrong with your login');
-}
-);
+  getUserInfo(id).then(function(user) {
+      return done(null, user);
+  }, function(err) {
+      return done(err,null);
+  });
+});
 
 
 module.exports = router;
