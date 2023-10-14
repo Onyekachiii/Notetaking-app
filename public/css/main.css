@@ -1,5 +1,5 @@
 :root {
-    --background-color: #f37860e1;
+    --background-color: #9CAF88;
     --bs-primary-rgb: #05133c;
 }
 
@@ -13,7 +13,7 @@ body {
 }
 
 h1, h2, h3, h4, h5, h6 {
-    font-family: 'Unbounded', cursive;
+    font-family: 'Poppins', sans-serif;
     font-weight: 800;
 }
 
@@ -72,7 +72,7 @@ h1, h2, h3, h4, h5, h6 {
 @media (min-width: 1200px) {
     .home {
         background:
-            url(../images/100-90-5.png),
+            url(../images/human.png) left no-repeat,
             var(--background-color);
         ;
     }
@@ -91,4 +91,8 @@ h1, h2, h3, h4, h5, h6 {
     right: -50px;
     bottom: -30px;
     
+}
+
+.image {
+    content: url('../images/human.png');
 }

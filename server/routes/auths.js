@@ -56,19 +56,34 @@ router.get("/login-failure", (req, res) => {
   res.send("Something went wrong with your login");
 });
 
+// End user session
+router.get("/logout", (req, res) => {
+  req.session.destroy(error => {
+    if (error) {
+      console.log(error);
+      res.send("Error logging out");
+    } else {
+      res.redirect("/");
+    }
+    
+  }
+  );
+  
+});
+
 // Presist user data after authentication
 passport.serializeUser(function (user, done) {
   done(null, user.id);
 });
 
 // Retrieve user data from session
-passport.deserializeUser(function(id, done) {
-  getUserInfo(id).then(function(user) {
-      return done(null, user);
-  }, function(err) {
-      return done(err,null);
-  });
+passport.deserializeUser(async (id, done) => {
+  try {
+    const user = await User.findById(id);
+    done(null, user);
+  } catch (error) {
+    done(error, null);
+  }
 });
-
 
 module.exports = router;
